@@ -10,6 +10,7 @@ from app.db.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import hash_password, verify_password, create_access_token
 from typing import Optional
+from datetime import datetime, UTC
 
 from app.schemas.auth import Token, UserCreate, UserLogin
 
@@ -37,7 +38,7 @@ async def get_google_user(request: Request) -> User:
             detail="Email not verified by Google",
         )
 
-    async with get_session() as session:
+    async for session in get_session():
         result = await session.exec(
             select(User).where(User.email == user_info["email"])
         )
@@ -57,6 +58,7 @@ async def get_google_user(request: Request) -> User:
         session.add(user)
         await session.commit()
         await session.refresh(user)
+        break
 
     return user
 
@@ -64,16 +66,18 @@ class Auth_Service:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def register_user(self, data: UserCreate) -> User | None:
+    async def register_user(self, data: UserCreate) -> User:
         userExists = await self.session.exec(
             select(User).where(User.email == data.email)
             )
         if userExists.first():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User with this email already exists."
                 )
+        
         hashed_password = hash_password(data.password)
+        
         user = User(
             email=data.email,
             full_name=data.full_name,
@@ -97,5 +101,7 @@ class Auth_Service:
         if not user or not verify_password(data.password, user.hashed_password):
             return None
         return user
-    
-    async def get_current_user(self, token: str = Depends())
+
+def utcnow():
+    """Return a timezone-aware UTC datetime."""
+    return datetime.now(UTC)

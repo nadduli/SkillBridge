@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """session module to interect with my database"""
 
-from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import SQLModel
@@ -10,7 +9,7 @@ from typing import AsyncGenerator
 
 settings = get_settings()
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False, pool_pre_ping=True)
+engine = create_async_engine(settings.DATABASE_URL, echo=True, pool_pre_ping=True)
 
 
 async def init_db():
@@ -20,7 +19,6 @@ async def init_db():
 
         await conn.run_sync(SQLModel.metadata.create_all)
 
-@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a database session"""
     async_session = AsyncSession(engine, expire_on_commit=False)

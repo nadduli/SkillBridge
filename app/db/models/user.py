@@ -4,7 +4,7 @@
 from sqlmodel import Field
 from .base_model import BaseModel
 from typing import Optional
-
+from pydantic import ConfigDict
 
 class User(BaseModel, table=True):
     email: str = Field(index=True, unique=True)
@@ -16,7 +16,5 @@ class User(BaseModel, table=True):
     provider: str
     role: Optional[str] = "user"
     hashed_password: Optional[str] = None
-    
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
